@@ -12,16 +12,17 @@
 #define NOMINMAX
 #endif
 #include <windows.h>        // for MultiByteToWideChar below
-#define LIBESPEAK_NG_EXPORT // espeak is exported from piper dll
-#endif
+//#define LIBESPEAK_NG_EXPORT // espeak is exported from piper dll
+//#endif
 
 #ifndef PIPER_VERSION
 #define PIPER_VERSION "0.0.1"
-#endif
-
+//#endif
 #include <espeak-ng/speak_lib.h>
 
-using json = nlohmann::json;
+#include <string>
+#include <vector>
+#include <cwchar>
 
 struct piper_synthesizer *piper_create(const char *model_path,
                                        const char *config_path,
@@ -124,8 +125,8 @@ struct piper_synthesizer *piper_create(const char *model_path,
   auto model_path_ort = &model_path_wc[0];
 #endif
   synth->session = std::make_unique<Ort::Session>(
-      Ort::Session(ort_env, model_path_ort, synth->session_options));
-
+      Ort::Session(get_ort_env(), model_path_ort, synth->session_options));
+#endif
   return synth;
 }
 
