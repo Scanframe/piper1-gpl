@@ -4,16 +4,23 @@
 cmake_minimum_required(VERSION 3.26)
 project(piper LANGUAGES C CXX)
 
+option(BUILD_TESTING "Enable project tests" ON)
+if(BUILD_TESTING)
+    enable_testing()
+endif()
+
 include(ExternalProject)
 
+if (NOT CMAKE_CROSSCOMPILING)
 # scikit-build-core will forward Python_* variables
-find_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
+    find_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
+endif ()
 
 # Install location for espeak-ng
 set(ESPEAKNG_BUILD_DIR ${CMAKE_BINARY_DIR}/espeak_ng)
 set(ESPEAKNG_INSTALL_DIR ${CMAKE_BINARY_DIR}/espeak_ng-install)
 
-if(WIN32)
+if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
     # Special handling for Windows
     set(ESPEAKNG_STATIC_LIB ${ESPEAKNG_INSTALL_DIR}/lib/espeak-ng.lib)
     set(UCD_STATIC_LIB ${ESPEAKNG_BUILD_DIR}/src/espeak_ng_external-build/src/ucd-tools/ucd.lib)
@@ -27,6 +34,9 @@ ExternalProject_Add(espeak_ng_external
     GIT_TAG 212928b394a96e8fd2096616bfd54e17845c48f6  # 2025-Mar-22
     PREFIX ${ESPEAKNG_BUILD_DIR}
     CMAKE_ARGS
+        # Forward the current toolchain file.
+        -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+        -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
         -DCMAKE_INSTALL_PREFIX=${ESPEAKNG_INSTALL_DIR}
         -DBUILD_SHARED_LIBS:BOOL=OFF
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
@@ -50,6 +60,8 @@ ExternalProject_Add(espeak_ng_external
 include_directories(
     ${ESPEAKNG_INSTALL_DIR}/include
 )
+
+if (NOT CMAKE_CROSSCOMPILING)
 
 # espeak bridge
 add_library(espeakbridge MODULE
@@ -95,3 +107,7 @@ add_custom_target(copy_espeak_ng_data ALL
     DEPENDS espeak_ng_external
     COMMENT "Copying espeak-ng-data after espeak-ng external project builds"
 )
+
+endif()
+
+add_subdirectory(libpiper)
