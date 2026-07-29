@@ -97,6 +97,10 @@ Somewhere in the distance, a bird chirped a melody that seemed to echo through t
 
     std::clog << "Filepath (model_data): " << model_data << std::endl;
 
+    std::ofstream audio_stream(wav_file, std::ios::binary);
+    piper_audio_chunk chunk;
+    int sample_total = 0;
+
     auto *synth = piper_create(model_data.string().data(),
                                (model_data.string() + ".json").data(),
                                espeak_ng_data.data());
@@ -112,16 +116,12 @@ Somewhere in the distance, a bird chirped a melody that seemed to echo through t
         return 1;
     }
 
-    std::ofstream audio_stream(wav_file, std::ios::binary);
-
-    piper_audio_chunk chunk;
-
-    int sample_total = 0;
     while ((result = piper_synthesize_next(synth, &chunk)) != PIPER_DONE) {
         if (result == PIPER_ERR_GENERIC) {
             std::cerr << "Synthesis next failed!" << std::endl;
             return 1;
         }
+        std::cout << "Samples processed (" << chunk.is_last << "): " << chunk.num_samples << std::endl;
         // Write header the first time.
         if (!sample_total) {
             writeWavHeader(chunk.sample_rate, chunk.num_samples, audio_stream);

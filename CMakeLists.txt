@@ -16,7 +16,7 @@ include(ExternalProject)
 
 if (NOT PIPER_BUILD_LIB_ONLY)
 # scikit-build-core will forward Python_* variables
-    find_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
+    shofind_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
 #    include(CMakePrintHelpers)
 #    cmake_print_variables(Python_VERSION Python_INCLUDE_DIRS Python_LIBRARIES)
 endif ()
@@ -42,9 +42,10 @@ ExternalProject_Add(espeak_ng_external
     PREFIX ${ESPEAKNG_BUILD_DIR}
     CMAKE_ARGS
         -DCMAKE_CROSSCOMPILING:BOOL=${CMAKE_CROSSCOMPILING}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         # To allow this to work the minimum cmake version is also patched.
         # By linking the VCRT static libs it will prevent MSVC linker errors in dependent projects.
-        -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>
+        #-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>
         # Forward the current toolchain file.
         -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
         -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
@@ -72,8 +73,8 @@ ExternalProject_Add(espeak_ng_external
     UPDATE_DISCONNECTED TRUE
     # Headers are only importing or exporting functions but no consideration when only as a private static library.
     # Does not make cmake abort when the patch has already been performed by first checking it.
-    PATCH_COMMAND "${GIT_EXECUTABLE}" apply --check --reverse "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch" ||
-        "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch"
+    #PATCH_COMMAND "${GIT_EXECUTABLE}" apply --check --reverse "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch" ||
+    #    "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch"
 )
 
 include_directories(

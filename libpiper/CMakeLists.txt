@@ -9,7 +9,6 @@ message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 message(STATUS "CMAKE_LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 
-
 project(piper LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -23,8 +22,6 @@ set(ESPEAKNG_INSTALL_DIR ${CMAKE_BINARY_DIR}/espeak_ng-install)
 
 if (NOT TARGET espeak_ng_external)
 
-if(WIN32 AND MSVC)
-    # Special handling for Windows
 # ucd-tools is built (not installed) by espeak-ng, so we reference its static
 # library directly from the build tree. Multi-config generators (e.g. Visual
 # Studio) place the output in a per-config subdirectory whose name is only
@@ -51,7 +48,7 @@ endif()
 
 ExternalProject_Add(espeak_ng_external
     GIT_REPOSITORY https://github.com/espeak-ng/espeak-ng.git
-    GIT_TAG 212928b394a96e8fd2096616bfd54e17845c48f6  # 2025-Mar-22
+    GIT_TAG 724808c  # 2026-Apr-06
     PREFIX ${ESPEAKNG_BUILD_DIR}
     GIT_SHALLOW TRUE
     CMAKE_ARGS
@@ -184,7 +181,7 @@ if(NOT TARGET onnxruntime::onnxruntime AND NOT DEFINED ONNXRUNTIME_DIR)
 endif()
 
 if(DEFINED ONNXRUNTIME_DIR)
-    find_library(ONNXRUNTIME_LIB NAMES onnxruntime PATHS ${ONNXRUNTIME_DIR}/lib REQUIRED)
+    find_library(ONNXRUNTIME_LIB NAMES onnxruntime PATHS "${ONNXRUNTIME_DIR}/lib" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
     add_library(onnxruntime::onnxruntime UNKNOWN IMPORTED)
     set_target_properties(onnxruntime::onnxruntime PROPERTIES
         IMPORTED_LOCATION ${ONNXRUNTIME_LIB}
@@ -195,24 +192,16 @@ endif()
 # ---- libpiper ---
 
 add_library(piper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/piper.cpp)
-set_target_properties(piper PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#set_target_properties(piper PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 target_compile_definitions(piper PRIVATE _PIPER_PKG)
 add_library(piper::shared ALIAS piper)
 
 add_dependencies(piper espeak_ng_external)
-target_include_directories(piper
-  PRIVATE
+target_include_directories(piper PUBLIC
     ${ESPEAKNG_INSTALL_DIR}/include
-    ${ONNXRUNTIME_DIR}/include
-  PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-target_link_directories(piper
-  PUBLIC
-    ${ONNXRUNTIME_DIR}/lib
-)
 target_link_libraries(piper
-	PRIVATE
     ${ESPEAKNG_STATIC_LIB}
     ${UCD_STATIC_LIB}
     onnxruntime::onnxruntime
@@ -242,7 +231,7 @@ target_link_libraries(piper-static
   PRIVATE
     ${ESPEAKNG_STATIC_LIB}
     ${UCD_STATIC_LIB}
-    onnxruntime
+    onnxruntime::onnxruntime
 )
 
 
@@ -250,7 +239,7 @@ target_link_libraries(piper-static
 add_subdirectory(src/main)
 
 # ---- version
-file(READ ${CMAKE_SOURCE_DIR}/../setup.py SETUP_PY_CONTENTS)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../setup.py" SETUP_PY_CONTENTS)
 string(REGEX MATCH "version=\"([0-9]+\\.[0-9]+\\.[0-9]+)\"" _ ${SETUP_PY_CONTENTS})
 set(PIPER_VERSION ${CMAKE_MATCH_1})
 
@@ -298,6 +287,7 @@ if(PIPER_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+#[[
 # ---- clang format ---
 find_program(CLANG_FORMAT clang-format)
 
@@ -324,6 +314,7 @@ if(CLANG_FORMAT)
 else()
     message(WARNING "clang-format not found. The 'format' target will not be available.")
 endif()
+]]
 
 if (BUILD_APPS)
     add_subdirectory(app/cli)
