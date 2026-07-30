@@ -1,15 +1,5 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 4d5dcb13..47ca8cd5 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -1,4 +1,4 @@
--cmake_minimum_required(VERSION 3.8)
-+cmake_minimum_required(VERSION 3.26)
- 
- project(espeak-ng
-   VERSION 1.52.0.1
 diff --git a/src/include/espeak-ng/espeak_ng.h b/src/include/espeak-ng/espeak_ng.h
-index 81988e48..352587cb 100644
+index 81988e48..2f607347 100644
 --- a/src/include/espeak-ng/espeak_ng.h
 +++ b/src/include/espeak-ng/espeak_ng.h
 @@ -26,6 +26,7 @@ extern "C"
@@ -20,17 +10,22 @@ index 81988e48..352587cb 100644
  #if defined(_WIN32) || defined(_WIN64)
  #ifdef LIBESPEAK_NG_EXPORT
  #define ESPEAK_NG_API __declspec(dllexport)
-@@ -35,6 +36,8 @@ extern "C"
+@@ -35,6 +36,13 @@ extern "C"
  #else
  #define ESPEAK_NG_API
  #endif
 +*/
++
++#if defined(__GNUC__) && !(defined(__MINGW32__) || defined(__MINGW64__))
++#define ESPEAK_NG_API __attribute__((visibility("hidden")))
++#else
 +#define ESPEAK_NG_API
++#endif
  
  #define ESPEAKNG_DEFAULT_VOICE "en"
  
 diff --git a/src/include/espeak-ng/speak_lib.h b/src/include/espeak-ng/speak_lib.h
-index 9ec4cafb..9cd5979f 100644
+index 9ec4cafb..dfde28bc 100644
 --- a/src/include/espeak-ng/speak_lib.h
 +++ b/src/include/espeak-ng/speak_lib.h
 @@ -28,6 +28,7 @@
@@ -41,12 +36,17 @@ index 9ec4cafb..9cd5979f 100644
  #if defined(_WIN32) || defined(_WIN64)
  #ifdef LIBESPEAK_NG_EXPORT
  #define ESPEAK_API __declspec(dllexport)
-@@ -37,6 +38,8 @@
+@@ -37,6 +38,13 @@
  #else
  #define ESPEAK_API
  #endif
 +*/
++
++#if defined(__GNUC__) && !(defined(__MINGW32__) || defined(__MINGW64__))
++#define ESPEAK_API __attribute__((visibility("hidden")))
++#else
 +#define ESPEAK_API
++#endif
  
  #define ESPEAK_API_REVISION  12
  /*

@@ -207,6 +207,14 @@ target_link_libraries(piper
     onnxruntime::onnxruntime
 )
 
+# Only export the Piper API functions.
+if(MSVC)
+    # Target properties specifically for MSVC.
+    set_target_properties(piper PROPERTIES LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/exports.def\"")
+else()
+    # Target properties for GCC / Linux.
+    target_link_options(piper PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.sym")
+endif()
 
 # ---- libpiper static ---
 
@@ -287,8 +295,8 @@ if(PIPER_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-#[[
 # ---- clang format ---
+
 find_program(CLANG_FORMAT clang-format)
 
 set(CLANG_FORMAT_ARGS "-i" CACHE STRING "Arguments for clang-format")
@@ -310,11 +318,11 @@ if(CLANG_FORMAT)
         COMMENT "Formatting C/C++ files with clang-format"
     )
     message(STATUS "Added 'format' target to run clang-format.")
-    add_dependencies(piper format)
+    # NEVER potentially change source code!!
+    #add_dependencies(piper format)
 else()
     message(WARNING "clang-format not found. The 'format' target will not be available.")
 endif()
-]]
 
 if (BUILD_APPS)
     add_subdirectory(app/cli)

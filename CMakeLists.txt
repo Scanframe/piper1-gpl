@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.26)
 # Builds Python module for Piper using espeak-ng and cmake.
 #
 # This is called automatically by scikit-build from setup.py.
+cmake_minimum_required(VERSION 3.26)
 project(piper LANGUAGES C CXX)
 
 # Get the required variable 'GIT_EXECUTABLE'.
@@ -16,7 +16,7 @@ include(ExternalProject)
 
 if (NOT PIPER_BUILD_LIB_ONLY)
 # scikit-build-core will forward Python_* variables
-    shofind_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
+    find_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
 #    include(CMakePrintHelpers)
 #    cmake_print_variables(Python_VERSION Python_INCLUDE_DIRS Python_LIBRARIES)
 endif ()
@@ -35,10 +35,22 @@ else()
     set(UCD_STATIC_LIB ${ESPEAKNG_BUILD_DIR}/src/espeak_ng_external-build/src/ucd-tools/libucd.a)
 endif()
 
+#[[
+if(WIN32)
+    # Hint the hidden Git for Windows internal tools directory so the patch cli tool is found.
+    list(APPEND CMAKE_PROGRAM_PATH "C:/Program Files/Git/usr/bin")
+endif()
+
+# Find the required Patch tool.
+find_package(Patch REQUIRED)
+]]
+
 # Add the external 'espeak' project and apply the patch to use it as a static library only.
 ExternalProject_Add(espeak_ng_external
-    GIT_REPOSITORY https://github.com/espeak-ng/espeak-ng.git
-    GIT_TAG 724808c  # 2026-Apr-06
+    #GIT_REPOSITORY https://github.com/espeak-ng/espeak-ng.git
+    #GIT_TAG 724808c  # 2026-Apr-06  724808c5a83f9ef95fdd0db886ba7ba537ff224a
+    # Use of zip-file for commit hash. Is faster then Git and requires 150 MByte less storage space.
+    URL https://github.com/espeak-ng/espeak-ng/archive/724808c5a83f9ef95fdd0db886ba7ba537ff224a.zip
     PREFIX ${ESPEAKNG_BUILD_DIR}
     CMAKE_ARGS
         -DCMAKE_CROSSCOMPILING:BOOL=${CMAKE_CROSSCOMPILING}
@@ -73,8 +85,9 @@ ExternalProject_Add(espeak_ng_external
     UPDATE_DISCONNECTED TRUE
     # Headers are only importing or exporting functions but no consideration when only as a private static library.
     # Does not make cmake abort when the patch has already been performed by first checking it.
-    #PATCH_COMMAND "${GIT_EXECUTABLE}" apply --check --reverse "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch" ||
-    #    "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch"
+    # Patching with Git is only possible when it is a Git repository.
+    #PATCH_COMMAND "${GIT_EXECUTABLE}" apply --check --reverse "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch" || "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch"
+    #PATCH_COMMAND ${Patch_EXECUTABLE} --dry-run --quiet --force --reverse -p1 < "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch" || patch --force -p1 < "${CMAKE_CURRENT_LIST_DIR}/libpiper/src/espeak.patch"
 )
 
 include_directories(
